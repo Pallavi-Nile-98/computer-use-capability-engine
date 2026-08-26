@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "computer-use-capability-engine"
+version = "0.1.0"
+description = "LLM discovery to deterministic replay of legacy-UI capabilities, with guardrails and human handoff"
+requires-python = ">=3.11"
+
+dependencies = [
+  # Data shapes with validation. Every artifact, action and result is a Pydantic
+  # model, so a malformed capability fails at the boundary rather than halfway
+  # through a click.
+  "pydantic>=2.10",
+
+  # Browser automation for the web surface adapter.
+  "playwright>=1.50",
+
+  # The LLM that drives discovery.
+  "anthropic>=1.1",
+
+  # The synthetic target application. Only needed to run the practice surface,
+  # not the engine itself.
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.34",
+  "python-multipart>=0.0.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.25"]
+
+# Installs a `cua` command that maps to the CLI's main() function.
+[project.scripts]
+cua = "cua.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cua"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
