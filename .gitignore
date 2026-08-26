@@ -1,0 +1,23 @@
+# Secrets. Never commit an API key.
+.env
+
+# Virtual environment — hundreds of megabytes, and specific to this machine.
+.venv/
+venv/
+
+# Python bytecode caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Build output.
+dist/
+build/
+*.egg-info/
+
+# Playwright's browser downloads, if they ever land inside the repo.
+ms-playwright/
+
+# Evidence from ad-hoc local runs. The committed evidence/ examples are
+# deliberate and are force-added; scratch runs are not.
+evidence/scratch/
