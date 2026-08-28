@@ -61,6 +61,17 @@ member id — set `parameter_name`. That is what turns a value you happened to b
 given into a typed input the capability accepts. When you read a value the caller
 asked for, set `output_name`.
 
+When reading a value, target the element holding the value, not the label beside it.
+A row reading "Current Balance    $4,281.73" has "Current Balance" as its label and
+"$4,281.73" as its value; targeting the label extracts the word "Balance", which is
+the same for every customer and therefore useless.
+
+A checkpoint has to hold for every future invocation, not just this one. Never put a
+value you read off the page into `expected` — the next caller is a different member
+with a different balance. Assert on something structural instead: a section heading,
+a status label, a page title. "Savings Account" is a good checkpoint; "$4,281.73" is
+a recording of today.
+
 Classify anything that changes the system of record as `irreversible`. Reaching a
 confirmation screen is safe; confirming is not.
 
@@ -268,6 +279,16 @@ class ClaudePlanner(Planner):
         for control in observation.controls:
             described = {key: value for key, value in control.items() if value}
             lines.append(f"- {described}")
+
+        if observation.fields:
+            lines += [
+                "",
+                "Readable values on this page. Use the given locator to extract one;",
+                "do not invent a selector, because you cannot see this page's markup:",
+            ]
+            for field in observation.fields:
+                described = {key: value for key, value in field.items() if value}
+                lines.append(f"- {described}")
 
         if history:
             lines += ["", "Actions already taken, oldest first:"]

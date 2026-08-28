@@ -20,6 +20,10 @@ dependencies = [
   # The LLM that drives discovery.
   "anthropic>=1.1",
 
+  # Reads .env so the documented setup ("copy .env.example to .env") actually
+  # works. Without it the file is inert and a present key looks absent.
+  "python-dotenv>=1.0",
+
   # The synthetic target application. Only needed to run the practice surface,
   # not the engine itself.
   "fastapi>=0.115",

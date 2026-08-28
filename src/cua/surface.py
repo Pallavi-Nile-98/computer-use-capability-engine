@@ -174,11 +174,48 @@ class PlaywrightSurface:
             }))"""
         )
 
+        # What can be read, as label/value pairs. Two sources, in priority order:
+        # the application's own field markers, then two-cell table rows, which is how
+        # a legacy app of this vintage lays out a labelled value. Reported so the
+        # planner never has to infer markup it was not shown.
+        fields = await self.page.evaluate(
+            """() => {
+                const seen = new Set();
+                const out = [];
+
+                document.querySelectorAll('[data-field]').forEach(e => {
+                    const marker = e.getAttribute('data-field');
+                    const row = e.closest('tr');
+                    const label = row ? (row.cells[0]?.innerText || '').trim() : null;
+                    out.push({
+                        field: marker,
+                        label: label || null,
+                        value: (e.innerText || '').trim() || null,
+                        locator: `[data-field='${marker}']`
+                    });
+                    seen.add(marker);
+                });
+
+                document.querySelectorAll('tr').forEach(row => {
+                    if (row.cells.length !== 2) return;
+                    const label = (row.cells[0].innerText || '').trim();
+                    const value = (row.cells[1].innerText || '').trim();
+                    if (!label || !value) return;
+                    const marked = row.cells[1].querySelector('[data-field]');
+                    if (marked && seen.has(marked.getAttribute('data-field'))) return;
+                    out.push({field: null, label, value, locator: null});
+                });
+
+                return out.slice(0, 40);
+            }"""
+        )
+
         return Observation(
             url=self.page.url,
             title=await self.page.title(),
             visible_text=(await self.page.locator("body").inner_text())[:15_000],
             controls=controls,
+            fields=fields,
             screenshot_path=screenshot_path,
         )
 
@@ -334,11 +371,33 @@ class FakeSurface:
         if screenshot_path:
             await self.screenshot(screenshot_path)
         title, text = self._PAGES[self.state]
+        # Mirror the real adapter's readable-field reporting, so the fake does not
+        # quietly diverge on the thing a planner depends on to extract a value.
+        fields: list[dict[str, str | None]] = []
+        if self.state == "details":
+            fields = [
+                {
+                    "field": "savings-balance",
+                    "label": "Current Balance",
+                    "value": "$4,281.73",
+                    "locator": "[data-field='savings-balance']",
+                }
+            ]
+        elif self.state == "created":
+            fields = [
+                {
+                    "field": "subaccount-status",
+                    "label": None,
+                    "value": "Sub-account opened",
+                    "locator": "[data-field='subaccount-status']",
+                }
+            ]
         return Observation(
             url=await self.current_url(),
             title=title,
             visible_text=text,
             controls=[],
+            fields=fields,
             screenshot_path=screenshot_path,
         )
 

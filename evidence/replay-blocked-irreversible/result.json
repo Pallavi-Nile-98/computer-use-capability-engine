@@ -1,0 +1,14 @@
+{
+  "status": "intervention_required",
+  "capability_id": "open-member-subaccount",
+  "outputs": {},
+  "outcome_code": null,
+  "failed_step_id": "step-04",
+  "expected": null,
+  "observed": null,
+  "error_code": "RISKY_ACTION_REQUIRES_CONFIRMATION",
+  "message": "This step is classified irreversible and has not been confirmed for this invocation. Reason given: Deterministic replay of step-04",
+  "evidence_dir": "evidence\\replay-blocked-irreversible",
+  "recovered_conditions": [],
+  "human_intervened": true
+}

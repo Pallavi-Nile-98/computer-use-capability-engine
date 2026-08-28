@@ -23,7 +23,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .compiler import CapabilitySpec, compile_artifact
+from .compiler import (
+    CapabilitySpec,
+    OverfittedRecording,
+    compile_artifact,
+    validate_recording,
+)
 from .evidence import EvidenceRecorder
 from .handoff import HandoffController
 from .models import (
@@ -106,7 +111,46 @@ class DiscoveryEngine:
                     None,
                 )
 
-            if action.done or action.action == ActionKind.COMPLETE:
+            # A planner may finish in either of two shapes: a bare `complete`, or a
+            # real action carrying done=True ("read this, and that's the goal met").
+            # The second is the natural way to answer and must not silently drop the
+            # action — doing so produced a capability that reported success while
+            # declaring no outputs at all.
+            finishing = action.done or action.action == ActionKind.COMPLETE
+            performs_work = action.action not in {ActionKind.COMPLETE, ActionKind.ESCALATE}
+
+            if finishing and performs_work:
+                try:
+                    self.policy.check_action(action)
+                    result = await self.surface.execute(action)
+                except (PolicyViolation, SurfaceError) as exc:
+                    self.evidence.record(
+                        "discovery_blocked", {"sequence": sequence, "error": str(exc)}
+                    )
+                    return (
+                        RunResult(
+                            status=ResultStatus.INTERVENTION_REQUIRED,
+                            failed_step_id=f"discovery-{sequence:02d}",
+                            observed=str(exc),
+                            error_code="DISCOVERY_ACTION_FAILED",
+                            message="The final action could not be performed.",
+                            evidence_dir=str(self.evidence.directory),
+                            human_intervened=human_intervened,
+                        ),
+                        None,
+                    )
+                if action.output_name and result is not None:
+                    outputs[action.output_name] = result
+                trace.append(
+                    ExecutedAction(
+                        sequence=sequence,
+                        planned=action,
+                        observed_url=observation.url,
+                        result=result,
+                    )
+                )
+
+            if finishing:
                 if action.checkpoint is None:
                     # The schema already rejects `done` without a checkpoint, so
                     # this only fires for a bare COMPLETE. Refusing here keeps the
@@ -125,6 +169,27 @@ class DiscoveryEngine:
                     )
 
                 artifact = compile_artifact(goal, entry_point, trace, spec, action.checkpoint)
+
+                # A recording that only works for the run it came from is not a
+                # capability. Refuse to save it rather than shipping something that
+                # will fail as a checkpoint on every other invocation.
+                try:
+                    validate_recording(artifact, outputs, {})
+                except OverfittedRecording as exc:
+                    self.evidence.record(
+                        "recording_rejected", {"sequence": sequence, "reason": str(exc)}
+                    )
+                    return (
+                        RunResult(
+                            status=ResultStatus.INTERVENTION_REQUIRED,
+                            error_code="OVERFITTED_RECORDING",
+                            message=str(exc),
+                            evidence_dir=str(self.evidence.directory),
+                            human_intervened=human_intervened,
+                        ),
+                        None,
+                    )
+
                 self.evidence.record(
                     "artifact_compiled",
                     artifact.model_dump(mode="json", exclude={"created_at"}),

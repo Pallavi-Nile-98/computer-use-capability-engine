@@ -61,6 +61,88 @@ class Discovery(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result.status, ResultStatus.INTERVENTION_REQUIRED)
             self.assertIsNone(artifact)
 
+    async def test_a_finishing_action_is_still_performed_and_recorded(self) -> None:
+        """A planner may answer and finish in the same action.
+
+        Regression: the loop originally checked `done` before executing, so a
+        planner that said "read the balance, and that completes the goal" had its
+        read silently dropped. The capability compiled, reported success, and
+        declared no outputs — a confidently useless artifact. Found by running the
+        real model, which phrases completion this way naturally; the scripted
+        planner happened to emit a separate `complete` and so hid the bug.
+        """
+        from cua.evidence import EvidenceRecorder
+        from cua.handoff import HandoffController, ScriptedOperator
+        from cua.models import ActionKind, Checkpoint, Locator, LocatorStrategy, PlannedAction
+        from cua.planner import Planner
+        from cua.policy import Policy
+        from cua.engine import DiscoveryEngine
+
+        class FinishesOnTheReadPlanner(Planner):
+            """Mirrors how the live model actually behaved."""
+
+            async def next_action(self, goal, observation, history):
+                taken = [item.action for item in history]
+                if ActionKind.FILL not in taken:
+                    return PlannedAction(
+                        action=ActionKind.FILL,
+                        target=Locator(
+                            strategy=LocatorStrategy.LABEL,
+                            value="Member ID",
+                            rationale="associated label",
+                        ),
+                        value="12345",
+                        parameter_name="member_id",
+                        reasoning="enter the id",
+                    )
+                if ActionKind.CLICK not in taken:
+                    return PlannedAction(
+                        action=ActionKind.CLICK,
+                        target=Locator(
+                            strategy=LocatorStrategy.ROLE,
+                            role="button",
+                            value="Search",
+                            rationale="accessible role and name",
+                        ),
+                        reasoning="submit the search",
+                    )
+                return PlannedAction(
+                    action=ActionKind.READ,
+                    target=Locator(
+                        strategy=LocatorStrategy.CSS,
+                        value="[data-field='savings-balance']",
+                        rationale="business field marker",
+                    ),
+                    output_name="savings_balance",
+                    reasoning="read the balance, which completes the goal",
+                    done=True,
+                    checkpoint=Checkpoint(
+                        description="details page shows the savings section",
+                        locator=Locator(
+                            strategy=LocatorStrategy.TEXT,
+                            value="Savings Account",
+                            rationale="business-state text",
+                        ),
+                        expected="Savings Account",
+                    ),
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result, artifact = await DiscoveryEngine(
+                surface=FakeSurface(),
+                planner=FinishesOnTheReadPlanner(),
+                policy=Policy(),
+                evidence=EvidenceRecorder(root / "discovery"),
+                handoff=HandoffController(operator=ScriptedOperator()),
+            ).run(BALANCE_GOAL, "http://127.0.0.1:8000/legacy", BALANCE_SPEC)
+
+            self.assertEqual(result.status, ResultStatus.SUCCESS)
+            # The read must survive into the capability, or it returns nothing.
+            self.assertEqual(len(artifact.steps), 3)
+            self.assertEqual([s.name for s in artifact.contract.outputs], ["savings_balance"])
+            self.assertEqual(result.outputs["savings_balance"], "$4,281.73")
+
     async def test_a_risky_step_needs_a_person_before_it_is_recorded(self) -> None:
         """The gate sits at recording time, not only at replay time."""
         with tempfile.TemporaryDirectory() as directory:

@@ -8,7 +8,7 @@
   "observed": null,
   "error_code": null,
   "message": "The application returned a known business outcome. This is an answer for the caller, not a failure.",
-  "evidence_dir": "evidence\\replay-not-found",
+  "evidence_dir": "evidence\\replay-business-outcome",
   "recovered_conditions": [],
   "human_intervened": false
 }

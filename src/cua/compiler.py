@@ -169,6 +169,66 @@ def compile_artifact(
     )
 
 
+class OverfittedRecording(ValueError):
+    """The recording only works for the invocation it was recorded against."""
+
+
+def validate_recording(
+    artifact: CapabilityArtifact,
+    outputs: dict[str, str],
+    parameters: dict[str, str],
+) -> None:
+    """Reject a capability that has baked this run's data into itself.
+
+    A planner works from one concrete run, so the tempting mistake is to assert on
+    what it happened to see. A checkpoint of "$4,281.73" passes for the member it
+    was recorded against and fails for every other one — and it fails *as a
+    checkpoint*, meaning a perfectly good replay gets reported as a hard failure.
+    That is worse than having no checkpoint at all, because it looks like verification.
+
+    Detected here rather than left to prompting. Prompting reduces how often a model
+    does this; validation decides whether the result is allowed to be saved. Both are
+    worth having, and only one of them is a guarantee.
+    """
+    checkpoint_text = " ".join(
+        filter(None, [artifact.checkpoint.expected, artifact.checkpoint.locator.value])
+    )
+
+    for name, value in outputs.items():
+        value = str(value).strip()
+        # Short values are too likely to appear coincidentally in a legitimate
+        # structural assertion to accuse the recording of over-fitting.
+        if len(value) >= 4 and value in checkpoint_text:
+            raise OverfittedRecording(
+                f"The checkpoint asserts on {value!r}, which is the value read into "
+                f"output {name!r}. That is this run's data, so the checkpoint would "
+                f"fail for every other invocation. Assert on a stable heading or "
+                f"label instead."
+            )
+
+    for name, value in parameters.items():
+        value = str(value).strip()
+        if len(value) >= 4 and value in checkpoint_text:
+            raise OverfittedRecording(
+                f"The checkpoint asserts on {value!r}, which was supplied as input "
+                f"{name!r}. The next caller will pass something different."
+            )
+
+    # A read that returns the text its own locator was searching for has almost
+    # certainly selected a label rather than the value beside it.
+    for step in artifact.steps:
+        if step.action != ActionKind.READ or not step.target or not step.output_name:
+            continue
+        observed = str(outputs.get(step.output_name, "")).strip()
+        if observed and observed == step.target.value.strip():
+            raise OverfittedRecording(
+                f"Step {step.id} read {observed!r} using a locator that searches for "
+                f"that same text, so it has selected the label rather than the value "
+                f"next to it. Output {step.output_name!r} would be identical for "
+                f"every member."
+            )
+
+
 def highest_risk(artifact: CapabilityArtifact) -> RiskLevel:
     """The risk class a reviewer is really signing off when they approve this.
 

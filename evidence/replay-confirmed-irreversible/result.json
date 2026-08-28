@@ -1,18 +1,14 @@
 {
   "status": "success",
-  "capability_id": "lookup-member-savings-balance",
-  "outputs": {
-    "savings_balance": "[REDACTED:d3018631]"
-  },
+  "capability_id": "open-member-subaccount",
+  "outputs": {},
   "outcome_code": null,
   "failed_step_id": null,
   "expected": null,
   "observed": null,
   "error_code": null,
   "message": "Deterministic replay completed and the checkpoint was verified.",
-  "evidence_dir": "evidence\\replay-recovered",
-  "recovered_conditions": [
-    "APPLICATION_ERROR"
-  ],
+  "evidence_dir": "evidence\\replay-confirmed-irreversible",
+  "recovered_conditions": [],
   "human_intervened": false
 }

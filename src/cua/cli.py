@@ -243,6 +243,18 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    # Load .env before anything reads the environment. Real environment variables
+    # win over the file, so an operator's explicit export is never overridden by a
+    # stale local .env — the file is for developer convenience, not configuration
+    # of record.
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(override=False)
+    except ImportError:
+        # Optional convenience. Exported variables still work without it.
+        pass
+
     args = build_parser().parse_args()
 
     if args.command == "serve":

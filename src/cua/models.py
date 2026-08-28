@@ -342,12 +342,23 @@ class CapabilityArtifact(BaseModel):
 
 
 class Observation(BaseModel):
-    """What the surface looks like right now, as the planner sees it."""
+    """What the surface looks like right now, as the planner sees it.
+
+    `controls` is what can be acted on; `fields` is what can be read. Both are
+    needed. An observation that lists only controls forces a planner to guess at
+    markup it cannot see in order to extract a value — and a guessed selector is
+    exactly what this project exists to avoid.
+    """
 
     url: str
     title: str
     visible_text: str
     controls: list[dict[str, str | None]]
+    # Readable label/value pairs, with the application's own field marker where it
+    # has one. This is the semantic equivalent of a human reading "Current Balance:
+    # $4,281.73" off the screen, and a desktop adapter can produce the same shape
+    # from accessibility properties.
+    fields: list[dict[str, str | None]] = Field(default_factory=list)
     screenshot_path: str | None = None
 
 
