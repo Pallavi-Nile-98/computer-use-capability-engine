@@ -1,0 +1,14 @@
+{
+  "status": "business_outcome",
+  "capability_id": "lookup-member-savings-balance",
+  "outputs": {},
+  "outcome_code": "MEMBER_NOT_FOUND",
+  "failed_step_id": "step-03",
+  "expected": null,
+  "observed": null,
+  "error_code": null,
+  "message": "The application returned a known business outcome. This is an answer for the caller, not a failure.",
+  "evidence_dir": "evidence\\replay-not-found",
+  "recovered_conditions": [],
+  "human_intervened": false
+}

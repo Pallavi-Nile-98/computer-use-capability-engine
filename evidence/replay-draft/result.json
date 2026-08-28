@@ -1,0 +1,14 @@
+{
+  "status": "hard_failure",
+  "capability_id": "lookup-member-savings-balance",
+  "outputs": {},
+  "outcome_code": null,
+  "failed_step_id": null,
+  "expected": null,
+  "observed": null,
+  "error_code": "ARTIFACT_NOT_APPROVED",
+  "message": "Unattended replay is blocked until a human approves this capability.",
+  "evidence_dir": "evidence\\replay-draft",
+  "recovered_conditions": [],
+  "human_intervened": false
+}

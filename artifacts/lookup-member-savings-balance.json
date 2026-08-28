@@ -1,0 +1,209 @@
+{
+  "schema_version": "1.0",
+  "capability_id": "lookup-member-savings-balance",
+  "version": "1.0.0",
+  "approval_state": "approved",
+  "approved_by": "Pallavi Nile",
+  "approved_at": "2026-08-28T03:17:27.300009Z",
+  "name": "Look up member savings balance",
+  "description": "Searches for a member by identifier in the servicing console and returns their current savings balance.",
+  "app_family": "demo-legacy-member-servicing",
+  "surface_type": "legacy_web",
+  "entry_point": "http://127.0.0.1:8001/legacy",
+  "contract": {
+    "inputs": [
+      {
+        "name": "member_id",
+        "type": "string",
+        "description": "Value supplied by the calling agent for 'member_id' at invocation time.",
+        "required": true,
+        "sensitive": true,
+        "pattern": "^\\d{5,12}$"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "savings_balance",
+        "type": "string",
+        "description": "Value 'savings_balance' as displayed by the application at replay time.",
+        "sensitive": true
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step-01",
+      "action": "fill",
+      "target": {
+        "strategy": "label",
+        "value": "Member ID",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "The field carries an associated label. Labels outlive the table-based layout this page uses for positioning."
+      },
+      "fallback_targets": [],
+      "value_template": "${member_id}",
+      "output_name": null,
+      "risk": "safe",
+      "precondition": null,
+      "postcondition": "The application accepted the action without an error signal.",
+      "retry": {
+        "max_attempts": 2,
+        "retry_delay_ms": 500
+      }
+    },
+    {
+      "id": "step-02",
+      "action": "click",
+      "target": {
+        "strategy": "role",
+        "value": "Search",
+        "role": "button",
+        "exact": true,
+        "frame": null,
+        "rationale": "Accessible role and name. Independent of position, so it survives changes to the surrounding table."
+      },
+      "fallback_targets": [],
+      "value_template": null,
+      "output_name": null,
+      "risk": "safe",
+      "precondition": null,
+      "postcondition": "The application accepted the action without an error signal.",
+      "retry": {
+        "max_attempts": 2,
+        "retry_delay_ms": 500
+      }
+    },
+    {
+      "id": "step-03",
+      "action": "read",
+      "target": {
+        "strategy": "css",
+        "value": "[data-field='savings-balance']",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "A business-field marker scoped to the single value being extracted, rather than a positional cell reference."
+      },
+      "fallback_targets": [],
+      "value_template": null,
+      "output_name": "savings_balance",
+      "risk": "safe",
+      "precondition": null,
+      "postcondition": "The declared output is present and non-empty.",
+      "retry": {
+        "max_attempts": 2,
+        "retry_delay_ms": 500
+      }
+    }
+  ],
+  "checkpoint": {
+    "description": "Member details page shows the savings account section.",
+    "locator": {
+      "strategy": "text",
+      "value": "Savings Account",
+      "role": null,
+      "exact": false,
+      "frame": null,
+      "rationale": "Business-state text proves the right page rendered, independently of the URL shape a given tenant uses."
+    },
+    "expected": "Savings Account"
+  },
+  "business_outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "description": "No member matches the supplied identifier.",
+      "locator": {
+        "strategy": "css",
+        "value": "[data-outcome='MEMBER_NOT_FOUND']",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "The application emits a machine-readable outcome attribute. Keying on it rather than on display text survives copy edits and localisation, both of which vary by institution."
+      },
+      "expected": "No member matches"
+    },
+    {
+      "code": "PERMISSION_DENIED",
+      "description": "The member exists, but this service account may not view them.",
+      "locator": {
+        "strategy": "css",
+        "value": "[data-outcome='PERMISSION_DENIED']",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "The application emits a machine-readable outcome attribute. Keying on it rather than on display text survives copy edits and localisation, both of which vary by institution."
+      },
+      "expected": "do not have permission"
+    }
+  ],
+  "recovery_rules": [
+    {
+      "code": "SESSION_EXPIRED",
+      "description": "The servicing host dropped the session. Re-entering at the entry point re-establishes it, after which the flow replays from the start.",
+      "detector": {
+        "strategy": "css",
+        "value": "[data-error='SESSION_EXPIRED']",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "Application-emitted error code, stable across releases."
+      },
+      "expected": null,
+      "action": "renavigate",
+      "dismiss_target": null,
+      "max_attempts": 1
+    },
+    {
+      "code": "APPLICATION_ERROR",
+      "description": "Transient host error. A reload distinguishes a blip from a real outage without masking a sustained failure.",
+      "detector": {
+        "strategy": "css",
+        "value": "[data-error='APPLICATION_ERROR']",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "Application-emitted error code, stable across releases."
+      },
+      "expected": null,
+      "action": "reload",
+      "dismiss_target": null,
+      "max_attempts": 2
+    },
+    {
+      "code": "INTERSTITIAL_NOTICE",
+      "description": "A maintenance notice occasionally covers the page. Safe to dismiss because it carries no business decision — unlike an error, which is telling you something you must not click past.",
+      "detector": {
+        "strategy": "css",
+        "value": "[data-interstitial='NOTICE']",
+        "role": null,
+        "exact": true,
+        "frame": null,
+        "rationale": "Dedicated interstitial marker, distinct from error markers."
+      },
+      "expected": null,
+      "action": "dismiss",
+      "dismiss_target": {
+        "strategy": "role",
+        "value": "Acknowledge",
+        "role": "button",
+        "exact": true,
+        "frame": null,
+        "rationale": "Accessible role and name; resilient to layout changes."
+      },
+      "max_attempts": 1
+    }
+  ],
+  "allowed_domains": [
+    "127.0.0.1",
+    "localhost"
+  ],
+  "allowed_actions": [
+    "click",
+    "fill",
+    "read"
+  ],
+  "tenant_overrides": {},
+  "created_at": "2026-08-28T03:16:29.783805Z"
+}

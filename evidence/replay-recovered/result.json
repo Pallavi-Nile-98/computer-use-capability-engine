@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "capability_id": "lookup-member-savings-balance",
+  "outputs": {
+    "savings_balance": "[REDACTED:79f20ec3]"
+  },
+  "outcome_code": null,
+  "failed_step_id": null,
+  "expected": null,
+  "observed": null,
+  "error_code": null,
+  "message": "Deterministic replay completed and the checkpoint was verified.",
+  "evidence_dir": "evidence\\replay-recovered",
+  "recovered_conditions": [
+    "APPLICATION_ERROR"
+  ],
+  "human_intervened": false
+}
