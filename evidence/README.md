@@ -12,7 +12,8 @@ contain `result.json`, the structured answer the caller received.
 
 | Directory | Command | Shows |
 |---|---|---|
-| `discovery-balance/` | `discover` | The observe → decide → act loop against a live UI, and the draft capability it compiled |
+| `discovery-balance-live/` | `discover --planner claude` | **The model in the loop.** Claude choosing each action against the live browser, with its reasoning and locator rationale recorded per decision |
+| `discovery-balance/` | `discover --planner scripted` | The same observe → decide → act loop with the deterministic planner, so the run is reproducible without a key |
 | `discovery-subaccount/` | `discover` | The same loop hitting an irreversible action, escalating to a human, being authorised, and only then recording it |
 | `replay-success/` | `replay` `12345` | Deterministic replay with no model involved, returning the declared output |
 | `replay-business-outcome/` | `replay` `99999` | `MEMBER_NOT_FOUND` returned as an **answer**, not a failure |
@@ -49,11 +50,19 @@ contains the name and balance as pixels, and the text-based redaction does not
 touch images. Every record in this repository is synthetic, so nothing here is
 sensitive, but the gap is real and is listed under `## Cuts` in `REPORT.md`.
 
-## A note on the planner
+## Which runs used a model
 
-These runs used `--planner scripted`, the deterministic stand-in, so the evidence is
-reproducible byte for byte by anyone without an API key. The browser, the
-application, the artifacts, the guardrails, the handoff and the result
-classification are all real; only the choice of next action was made by hardcoded
-logic rather than by a model. `ClaudePlanner` implements the identical interface and
-is selected with `--planner claude`.
+`discovery-balance-live/` is the live path: Claude decided every action. Its
+`model_decision` events carry the reasoning behind each choice and the rationale for
+each locator, which is the clearest window into how a capability gets recorded.
+
+Every other run used `--planner scripted`, the deterministic stand-in, so they are
+reproducible byte for byte by anyone without an API key. In those runs the browser,
+the application, the artifacts, the guardrails, the handoff and the result
+classification are all real; only the choice of next action came from hardcoded
+logic. `ScriptedPlanner` and `ClaudePlanner` implement the same interface.
+
+Running the live path is also what exposed three defects the scripted planner had
+hidden — a dropped final action, a checkpoint asserting on run-specific data, and
+observations that reported clickable controls but not readable values. See the
+opening of `REPORT.md`.

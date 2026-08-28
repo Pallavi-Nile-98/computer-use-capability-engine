@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "approval_state": "approved",
   "approved_by": "Pallavi Nile",
-  "approved_at": "2026-08-28T15:33:41.538459Z",
+  "approved_at": "2026-08-28T16:54:40.994060Z",
   "name": "Look up member savings balance",
   "description": "Searches for a member by identifier in the servicing console and returns their current savings balance.",
   "app_family": "demo-legacy-member-servicing",
@@ -40,7 +40,7 @@
         "role": "textbox",
         "exact": true,
         "frame": null,
-        "rationale": "The search field is associated with the visible label 'Member ID', which is the stable, human-meaningful identifier for this input. No accessible name is exposed on the input itself, so the label association is the most durable locator; a CSS/name attribute would be tied to the current legacy markup."
+        "rationale": "The search input is associated with the visible 'Member ID' label, which is the stable, human-meaningful identifier for this field. Label-based lookup survives markup/layout changes better than a CSS selector, and there is no accessible name on the input itself to use a role+name locator."
       },
       "fallback_targets": [],
       "value_template": "${member_id}",
@@ -62,7 +62,7 @@
         "role": "button",
         "exact": true,
         "frame": null,
-        "rationale": "The submit button is identified by its accessible role and visible name 'Search', which is the stable, human-meaningful identifier for this control and should survive layout or markup changes in future versions of the console."
+        "rationale": "The submit button is identified by its accessible role and visible name 'Search', which is the stable, human-meaningful handle for this control and will survive layout or markup changes in future versions of the console."
       },
       "fallback_targets": [],
       "value_template": null,
@@ -84,7 +84,7 @@
         "role": null,
         "exact": true,
         "frame": null,
-        "rationale": "The page exposes a stable semantic data-field attribute naming the value cell itself, not the 'Current Balance' label beside it. No accessible role or label association is offered for this value, and data-field='savings-balance' is a narrowly scoped, meaning-carrying attribute that should survive layout changes better than positional or class-based selectors."
+        "rationale": "The page supplies a stable, semantic data-field attribute naming the value cell itself, so this extracts the balance amount rather than the 'Current Balance' label text. A data-field attribute is content-oriented rather than layout-oriented, so it should survive styling or markup restructuring far better than positional CSS, and no accessible role/name or label association is exposed for this value cell."
       },
       "fallback_targets": [],
       "value_template": null,
@@ -99,14 +99,14 @@
     }
   ],
   "checkpoint": {
-    "description": "The member detail page displays the 'Savings Account' section, confirming the balance read came from the savings sub-section of a loaded member record rather than an error or empty page.",
+    "description": "The member details page shows the Savings Account section, confirming the savings balance region was reached and read for the requested member.",
     "locator": {
       "strategy": "text",
       "value": "Savings Account",
       "role": null,
       "exact": true,
       "frame": null,
-      "rationale": "A structural section heading that is present for every member with a savings account, independent of which member was looked up or what their balance is. Asserting on the heading rather than the amount keeps the checkpoint valid for future callers."
+      "rationale": "'Savings Account' is a fixed section heading present for every member, so it proves the correct section rendered without depending on any member-specific value."
     },
     "expected": "Savings Account"
   },
@@ -205,5 +205,5 @@
     "read"
   ],
   "tenant_overrides": {},
-  "created_at": "2026-08-28T14:54:47.070240Z"
+  "created_at": "2026-08-28T16:53:31.605560Z"
 }
