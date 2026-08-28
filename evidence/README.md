@@ -8,6 +8,19 @@ Each directory contains `events.jsonl` — one JSON object per event, appended a
 run progressed — and screenshots where the run captured them. Replay runs also
 contain `result.json`, the structured answer the caller received.
 
+## The saved capabilities
+
+Two example artifacts sit alongside the logs, so the recorded capability and the
+runs that produced and executed it can be read together:
+
+| File | What it is |
+|---|---|
+| `example-capability.json` | The balance lookup, as recorded and approved. Note `"${member_id}"` rather than a literal id, the typed contract, the per-locator `rationale`, and the checkpoint |
+| `example-capability-with-irreversible-step.json` | The sub-account capability, whose final step is classified `irreversible` and gated at every invocation |
+
+These are copies of the live capabilities in `/artifacts/`, which is where the CLI
+reads and writes them.
+
 ## What each run demonstrates
 
 | Directory | Command | Shows |
