@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
@@ -369,13 +370,27 @@ class FakeSurface:
         return action.reasoning
 
     async def checkpoint(self, locator: Locator, expected: str | None = None) -> bool:
+        """Approximate the real adapter's matching, faithfully enough to be useful.
+
+        `expected` wins when supplied, mirroring the real adapter, which asserts on
+        the element's text rather than on the selector. Otherwise the marker value
+        is pulled out of the selector — `[data-error='SESSION_EXPIRED']` is asking
+        about SESSION_EXPIRED, and the fake's page text carries those markers.
+
+        The first version compared the entire selector string against the page text
+        and so matched nothing. It made every interstitial look like an unknown
+        state, which is exactly the misclassification this whole design exists to
+        avoid — worth keeping the note as a reminder that a fake which is subtly
+        wrong is more dangerous than no fake at all.
+        """
         observation = await self.observe()
+        if expected:
+            return expected in observation.visible_text
         if locator.strategy == LocatorStrategy.CSS:
-            # CSS markers in this app encode the state name, e.g. [data-error='X'].
-            for token in self._PAGES:
-                if token in locator.value:
-                    return token in observation.visible_text
-        return (expected or locator.value) in observation.visible_text
+            marker = re.search(r"'([^']+)'", locator.value)
+            if marker:
+                return marker.group(1) in observation.visible_text
+        return locator.value in observation.visible_text
 
     async def screenshot(self, path: str) -> None:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
