@@ -10,7 +10,7 @@ screen the way a human operator would.
 ```
 goal in English
       │
-      ▼  discovery — a model decides one action at a time, against a live browser
+      ▼  discovery - a model decides one action at a time, against a live browser
  ┌────────────────────────────────────────────┐
  │  observe ──▶ decide ──▶ act ──▶ observe …  │
  └────────────────────────────────────────────┘
@@ -19,7 +19,7 @@ goal in English
       │
       ▼  a human reviews and approves it
       │
-      ▼  replay — no model, thousands of times, for pennies
+      ▼  replay - no model, thousands of times, for pennies
  success │ business outcome │ recoverable failure │ hard failure
 ```
 
@@ -32,7 +32,7 @@ Worked examples from real runs are in **[evidence/](evidence/)**.
 
 - Python 3.11 or newer
 - A Chromium-based browser for Playwright (installed in setup below)
-- An Anthropic API key — **only** for live model-driven discovery. Everything else,
+- An Anthropic API key - **only** for live model-driven discovery. Everything else,
   including the full test suite and the complete demo path, runs without one.
 
 ## Setup
@@ -85,7 +85,7 @@ A synthetic credit-union servicing console on `http://127.0.0.1:8000/legacy`. It
 stands in for a real legacy bank system: table-based layout, no test ids, a
 POST-then-redirect mid-flow, and five distinct endings for the same search.
 
-Try it by hand first — it makes the rest concrete:
+Try it by hand first - it makes the rest concrete:
 
 | Member ID | What the app does |
 |---|---|
@@ -103,13 +103,13 @@ cua discover --goal "Look up member 12345 and read their current savings balance
 
 A browser opens and drives itself. The model chooses one action per turn from what
 it can see on screen. On success this writes a **draft** capability and a full
-evidence trail — a screenshot of every observation, plus every decision and its
+evidence trail - a screenshot of every observation, plus every decision and its
 reasoning.
 
 ### 3. Review and approve it
 
 Discovery never produces something runnable. Open the artifact, read the steps and
-the locators — each locator carries a `rationale` field explaining why it should
+the locators - each locator carries a `rationale` field explaining why it should
 still work next month — then approve it:
 
 ```bash
@@ -119,7 +119,7 @@ cua approve --artifact artifacts/lookup-member-savings-balance.json --reviewer "
 The command prints what you are signing off, including the highest risk class in
 the capability, and records your name in the artifact.
 
-### 4. Replay it — no model involved
+### 4. Replay it - no model involved
 
 ```bash
 cua replay --artifact artifacts/lookup-member-savings-balance.json --params '{"member_id":"12345"}' --evidence evidence/replay-success
@@ -202,7 +202,7 @@ cua replay --artifact artifacts/open-member-subaccount.json --params '{"member_i
 ```
 
 Nothing was written. Approving a capability is not standing consent to run its
-irreversible step — each invocation needs its own:
+irreversible step - each invocation needs its own:
 
 ```bash
 cua replay --artifact artifacts/open-member-subaccount.json --params '{"member_id":"12345"}' --confirm-irreversible --evidence evidence/replay-confirmed-irreversible
@@ -237,7 +237,7 @@ cua catalog --directory artifacts
 ```
 
 Renders each **approved** capability as a function-calling tool definition with
-typed arguments and returns. Drafts do not appear — an unapproved capability is not
+typed arguments and returns. Drafts do not appear - an unapproved capability is not
 merely flagged, it is uncallable.
 
 ### Print the artifact schema
@@ -259,7 +259,7 @@ PLAYWRIGHT_SLOW_MO=1500 cua discover --goal "Look up member 12345 and read their
 ```
 src/cua/
   models.py       every contract: the artifact schema, actions, results
-  surface.py      the perceive/act seam — Playwright and in-memory adapters
+  surface.py      the perceive/act seam - Playwright and in-memory adapters
   planner.py      decides the next action: Claude, or a scripted stand-in
   engine.py       the discovery loop
   compiler.py     turns a discovery trace into a parameterised capability
@@ -286,11 +286,11 @@ of surface later.
 
 ## Troubleshooting
 
-**`ANTHROPIC_API_KEY is not set`** — either set it in `.env`, or add
+**`ANTHROPIC_API_KEY is not set`** - either set it in `.env`, or add
 `--planner scripted` to run the same loop without a model.
 
 **Playwright fails with "side-by-side configuration is incorrect"** (some Windows
-installs) — the bundled Chromium will not launch. Point Playwright at a browser you
+installs) - the bundled Chromium will not launch. Point Playwright at a browser you
 already have:
 
 ```bash
@@ -299,11 +299,11 @@ PLAYWRIGHT_CHANNEL=msedge cua discover ...
 
 Or set `PLAYWRIGHT_CHANNEL=msedge` in `.env`.
 
-**`cua: command not found`** — the virtual environment is not active, or
+**`cua: command not found`** - the virtual environment is not active, or
 `pip install -e ".[dev]"` has not been run. As a fallback,
 `python -m cua.cli <command>` works from the repo root with `PYTHONPATH=src`.
 
-**Port 8000 already in use** — `cua serve --port 8001`, then pass
+**Port 8000 already in use** - `cua serve --port 8001`, then pass
 `--target http://127.0.0.1:8001/legacy` to `discover`.
 
 ---
@@ -319,5 +319,5 @@ Or set `PLAYWRIGHT_CHANNEL=msedge` in `.env`.
 - Only allowlisted hosts, schemes and action types execute, and a capability is
   additionally scoped to the action types its own recording used.
 - Irreversible steps require per-invocation human confirmation.
-- Screenshots are **not** redacted — text redaction does not touch pixels. See
+- Screenshots are **not** redacted - text redaction does not touch pixels. See
   `## Cuts` in [REPORT.md](REPORT.md).
