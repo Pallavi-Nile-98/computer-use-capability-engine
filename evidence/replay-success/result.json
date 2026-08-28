@@ -2,7 +2,7 @@
   "status": "success",
   "capability_id": "lookup-member-savings-balance",
   "outputs": {
-    "savings_balance": "[REDACTED:b84b02fc]"
+    "savings_balance": "[REDACTED:2bb0abbe]"
   },
   "outcome_code": null,
   "failed_step_id": null,
